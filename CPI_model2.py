@@ -34,10 +34,8 @@ class Net(nn.Module):
         # self.enc_layers = [EncoderLayer(self.hidden_size2, 1, 1024, [self.hidden_size2], Drate=0.1).cuda() for _ in
         #                    range(self.num_layers)]
         # selfattn_rak
-        self.dropout = nn.Dropout(0.3)
+        self.dropout = nn.Dropout(0.1)
 
-        #self.embed_protein = nn.Embedding(vocab_size, embedding_dim)
-        #self.embed_ligand = nn.Embedding(vocab_size, embedding_dim)
         self.embed_atom = nn.Embedding(atom_vocab_size, embedding_dim)
         self.embed_bond = nn.Embedding(bond_vocab_size, max_nb)
 
@@ -81,20 +79,17 @@ class Net(nn.Module):
         self.FC1_ligand = nn.Linear(embedding_dim, embedding_dim)
 
         self.FC2_CNN1 = nn.Linear(64*25*25, 128)
-        self.FC2_Final1 = nn.Linear(128, 32)
-        self.FC2_Final2 = nn.Linear(32, 1)
+        self.FC2_Final1 = nn.Linear(128, 128)
+        self.FC2_Final2 = nn.Linear(128, 1)
 
         """Pairwise Interaction Prediction Module"""
-        # self.FCpip_protein = nn.Linear(embedding_dim, embedding_dim)
-        # self.FCpip_ligand = nn.Linear(embedding_dim, embedding_dim)
         self.FCpip_pairwise = nn.Linear(16, 1)
         self.FCpip_mulMat = nn.Linear(16, 1)
-        #self.LReLU_pred = nn.LeakyReLU()
         self.sig = nn.Sigmoid()
 
         """Graph whatever"""
-        self.label_U2 = nn.Linear(embedding_dim + max_nb, embedding_dim)
-        self.label_U1 = nn.Linear(2*embedding_dim, embedding_dim)
+        self.gconv1 = nn.ModuleList([GATgate(embedding_dim, embedding_dim) for i in range(3)])
+        self.LM = nn.LayerNorm(embedding_dim)
         # self.FCpip_merger = nn.Linear(max_num_seq*max_num_atoms, 128)
         # self.bn1d = nn.BatchNorm1d(128)
 
@@ -110,59 +105,64 @@ class Net(nn.Module):
         threeConvRes2 = torch.transpose(threeConvRes2, 2, 3)
         pairwise_pred_fin = self.FCpip_pairwise(threeConvRes2)# batch, max_num_atoms, max_num_seq, 1
         pairwise_pred_fin = pairwise_pred_fin.view(-1, max_num_atoms, max_num_seq).contiguous() * pairwise_mask# batch, max_num_atoms, max_num_seq
+        return pairwise_pred_fin#, mulMat
 
-        threeConvRes3 = self.threeConv3(pairwise_pred.view(-1, 1, max_num_atoms, max_num_seq))  # batch, 16, max_num_atoms, max_num_seq
-        threeConvRes3 = torch.transpose(threeConvRes3, 1, 2)
-        threeConvRes3 = torch.transpose(threeConvRes3, 2, 3)
-        mulMat = self.FCpip_mulMat(threeConvRes3)  # batch, max_num_atoms, max_num_seq, 1
-        mulMat = mulMat.view(-1, max_num_atoms, max_num_seq).contiguous() * pairwise_mask# batch, max_num_atoms, max_num_seq
-        return pairwise_pred_fin, mulMat
-
-    def wln_unit(self, batch_size, vertex_mask, vertex_features, edge_initial, atom_adj, bond_adj, nbs_mask):
-        nbs_mask = nbs_mask.view(batch_size, max_num_atoms, max_nb, 1)
-        vertex_nei = torch.index_select(vertex_features.view(-1, embedding_dim), 0, atom_adj).\
-            view(batch_size,  max_num_atoms, max_nb, embedding_dim)
-        edge_nei = torch.index_select(edge_initial.view(-1, max_nb), 0, bond_adj).\
-            view(batch_size, max_num_atoms, max_nb, max_nb)
-        l_nei = torch.cat((vertex_nei, edge_nei), -1)#batch_size,  max_num_atoms, max_nb, embedding_dim + max_nb
-        nei_label = F.leaky_relu(self.label_U2(l_nei), 0.1)
-        nei_label = torch.sum(nei_label * nbs_mask, dim=-2)#batch_size,  max_num_atoms, embedding_dim
-        new_label = torch.cat((vertex_features, nei_label), 2)#batch_size,  max_num_atoms, 2*embedding_dim
-        new_label = self.label_U1(new_label)#batch_size,  max_num_atoms, embedding_dim
-        graph_feature = F.leaky_relu(new_label, 0.1)
-        return graph_feature
-
-    def GraphConv_module(self, batch_size, vertex_mask, vertex, edge, atom_adj, bond_adj, nbs_mask):
+    def GraphConv_module_new(self, batch_size, vertex_mask, vertex, atom_adj):
         vertex_initial = self.embed_atom(vertex)  # batch, max_num_atoms, embedding_dim
-        edge_initial = self.embed_bond(edge)  # batch, max_num_atoms, embedding_dim
         vertex_feature = F.leaky_relu(self.FC1_ligand(vertex_initial), 0.1)# batch, max_num_atoms, embedding_dim
-        # batch_size,  max_num_atoms, embedding_dim
-        graph_feature = self.wln_unit(batch_size, vertex_mask, vertex_feature, edge_initial, atom_adj, bond_adj, nbs_mask)
-        return graph_feature, vertex_feature#, super_feature
+
+        graph_feature = vertex_feature
+        for k in range(1):
+            graph_feature = self.gconv1[k](graph_feature, atom_adj)
+            graph_feature = self.LM(graph_feature)
+            #vertex_feature = self.dropout(vertex_feature)
+        graph_feature = graph_feature * vertex_mask.view(batch_size, -1, 1)
+        return graph_feature, vertex_feature# batch_size,  max_num_atoms, embedding_dim
 
     def forward(self, L_mask, vecOfLatoms, fb, anb, bnb, nbs_mat, vecOfPatoms, P_mask, tmpFRIMat):
         batch_size = vecOfLatoms.size(0)
         #L_embeds = self.embed_atom(vecOfLatoms) # batch, max_num_atoms, embedding_dim
         #LFC = self.FC1_ligand(L_embeds) # batch, max_num_atoms, embedding_dim
-        graph_feature, vertex_feature = self.GraphConv_module(batch_size, L_mask, vecOfLatoms, fb, anb, bnb, nbs_mat)
-
+        graph_feature, vertex_feature = self.GraphConv_module_new(batch_size, L_mask, vecOfLatoms, anb)
         P_embeds = self.embed_atom(vecOfPatoms)  # batch, max_num_seq, embedding_dim
         PFC = self.FC1_protein(P_embeds)  # batch, max_num_seq, embedding_dim
 
-        pairwise_pred, mulMat = self.pairwise_pred_module(batch_size, vertex_feature, PFC, L_mask, P_mask, tmpFRIMat)
+        pairwise_pred = self.pairwise_pred_module(batch_size, vertex_feature, PFC, L_mask, P_mask, tmpFRIMat)#mulMat
 
-        LtoP = torch.matmul(graph_feature.transpose(1, 2), mulMat)  # batch, embedding_dim, max_num_seq
+        LtoP = torch.matmul(graph_feature.transpose(1, 2), tmpFRIMat)  # batch, embedding_dim, max_num_seq
         LPMul = torch.matmul(LtoP, PFC)  # batch, embedding_dim, embedding_dim
         threeConvRes = self.threeConv(LPMul.view(-1, 1, embedding_dim, embedding_dim))# batch, 64*25*25
         threeConvRes = torch.transpose(threeConvRes, 1, 2)
         threeConvRes = torch.transpose(threeConvRes, 2, 3)
         threeConvRes = self.FC2_CNN1(threeConvRes.contiguous().view(-1, 64*25*25))
         threeConvRes = self.dropout(threeConvRes)
-        threeConvRes = self.FC2_Final1(threeConvRes)#batch, 32
-        finStage = self.FC2_Final2(threeConvRes)#batch, 1
+
+        finStage = threeConvRes#torch.cat(threeConvRes], -1)
+        finStage = self.FC2_Final1(finStage)#batch, 32
+        finStage = self.FC2_Final2(finStage)#batch, 1
         return finStage.view(-1), self.sig(pairwise_pred)
 
 
+class GATgate(torch.nn.Module):
+    def __init__(self, n_in_feature, n_out_feature):
+        super(GATgate, self).__init__()
+        self.W = nn.Linear(n_in_feature, n_out_feature)
+        self.A = nn.Parameter(torch.zeros(size=(n_out_feature, n_out_feature)))
+        self.gate = nn.Linear(n_out_feature * 2, n_out_feature)
+        self.leakyrelu = nn.LeakyReLU()
 
+    def forward(self, x, adj):
+        batch_size = x.size(0)
+        h = self.W(x)
+        e = torch.einsum('ijl,ikl->ijk', (torch.matmul(h, self.A), h))
+        e = e + e.permute((0, 2, 1))
+        zero_vec = -9e15 * torch.ones_like(e)
+        attention = torch.where(adj > 0, e, zero_vec)
+        attention = F.softmax(attention, dim=1)
+        attention = attention * adj
+        h_prime = F.relu(torch.einsum('aij,ajk->aik', (attention, h)))
+        coeff = self.gate(torch.cat([x, h_prime], -1)).view(batch_size, -1, embedding_dim)#.repeat(1, 1, embedding_dim)
+        retval = coeff * x + (1 - coeff) * h_prime
+        return retval
 
 
