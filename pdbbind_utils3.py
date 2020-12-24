@@ -8,7 +8,7 @@ from torch import nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset
 from rdkit import Chem
-from rdkit.Chem.rdmolops import GetAdjacencyMatrix
+# from rdkit.Chem.rdmolops import GetAdjacencyMatrix
 # from rdkit.Chem import rdPartialCharges
 from rdkit.Chem import AllChem
 from rdkit.Chem import Descriptors
@@ -16,8 +16,8 @@ import math
 from metrics import *
 import os
 
-max_num_seq = 1000
-max_num_atoms = 150
+max_num_seq = 2000
+max_num_atoms = 200
 
 twoDic = {"AL": "Al", "AU": "Au", "AG": "Ag", "AS": "As", "BA": "Ba", "BE": "Be", "BI": "Bi", "BR": "Br",
           "CA": "Ca", "CD": "Cd", "CL": "Cl", "CO": "Co", "CR": "Cr", "CS": "Cs", "CU": "Cu", "DY": "Dy",
@@ -43,19 +43,21 @@ def atom_features(atom):
     return onek_encoding_unk(atom, elem_list)
 
 
-def mol2graph(lig_mol, list_atypes):
-    n_l_atoms = lig_mol.GetNumAtoms()
-    atoms = lig_mol.GetAtoms()
-
-    if n_l_atoms != len(list_atypes):
-        return []
-    for i, atom in enumerate(atoms):
-        if list_atypes[i] != atom.GetSymbol():
-            return []
-    adj_mat_lig = np.zeros((n_l_atoms, n_l_atoms), dtype=np.int32)
-    adjtmp = GetAdjacencyMatrix(lig_mol) + np.eye(n_l_atoms)
-    adj_mat_lig[:n_l_atoms, :n_l_atoms] = adjtmp
-    return adj_mat_lig
+# def mol2graph(lig_mol, list_atypes):
+#     n_l_atoms = lig_mol.GetNumAtoms()
+#     atoms = lig_mol.GetAtoms()
+#
+#     if len(atoms) != len(list_atypes):
+#         return []
+#     for i, atom in enumerate(atoms):
+#         if list_atypes[i] != atom.GetSymbol():
+#             return []
+#
+#     adj_mat = np.zeros((max_num_atoms+max_num_seq, max_num_atoms+max_num_seq), dtype=np.int32)
+#
+#     adj1 = GetAdjacencyMatrix(lig_mol) + np.eye(n_l_atoms)
+#     adj_mat[:n_l_atoms, :n_l_atoms] = adj1
+#     return adj_mat
 
 
 # def mol_add_charge(cur_mol, max_seq):
@@ -148,7 +150,7 @@ def get_pocket_from_pdb(pdbName):
         return None, None, None
 
 
-def euclidDist(ligtype, ligPos, poctype, pocPos):
+def euclidDist(ligPos, pocPos):
     # ligtypeList = ["C", "N", "O", "S", "P", "F", "Cl", "Br", "I"]
     # poctypeList = ["C", "N", "O", "S"]
 
@@ -158,8 +160,6 @@ def euclidDist(ligtype, ligPos, poctype, pocPos):
     #     return 99999
     # if poctype not in poctypeList:
     #     return 99999
-    if poctype == "D" or poctype == "X" or poctype == "XE":
-        return 99999
 
     xdist = math.pow(pocx - ligx, 2)
     ydist = math.pow(pocy - ligy, 2)
@@ -167,6 +167,21 @@ def euclidDist(ligtype, ligPos, poctype, pocPos):
     return math.sqrt(xdist + ydist + zdist)
 
 
+def cutoffBinning(eucDist, thres):#thres starts from 6.95 and ends at 2.75
+    for i, ele in enumerate(thres):
+        if eucDist > ele:
+            return i/70.0
+    return 1
+
+
+def makeThreshold():
+    thres = list(np.linspace(2.75, 6.95, 70))#usually 0.06 range for each bin
+    for i, ele in enumerate(thres):
+        thres[i] = math.floor(ele * 100) / 100
+    thres.reverse()#starts from 6.95 and ends at 2.75
+    return thres
+
+"""
 def fri(ligAtom, pocAtom, eucDist):
     # some atoms are like "O1-"...
     if any(chr.isdigit() for chr in pocAtom):
@@ -180,9 +195,9 @@ def fri(ligAtom, pocAtom, eucDist):
     ligRadi = Chem.GetPeriodicTable().GetRvdw(ligAtom)
     pocRadi = Chem.GetPeriodicTable().GetRvdw(pocAtom)
     tau = 1
-    evee = 5
+    evee = 15
     return 1 / (1 + math.pow(eucDist / (tau * (ligRadi + pocRadi)), evee))
-
+"""
 
 def listOfCASF2016():
     retList = []
@@ -281,27 +296,6 @@ def readmol2(mol2Name):
 #         return None, None, None
 
 
-def cutoffBinning(eucDist, thres):#thres starts from 20 and ends at 3
-    """
-    prevEle = 99999
-    for i, ele in enumerate(thres):
-        if prevEle >= eucDist > ele:
-            return i/100.0
-    """
-    if eucDist > 4.3:
-        return 0
-    return 1#less than 3?
-
-
-def makeThreshold():
-    thres = list(np.linspace(3, 5.95, 60))#usually 0.05 range for each bin
-    thres.extend(list(np.linspace(6, 20, 40)))#usually 0.3 range for each bin
-    for i, ele in enumerate(thres):
-        thres[i] = math.floor(ele * 100) / 100
-    thres.reverse()#starts from 20 and ends at 3
-    return thres
-
-
 def load_data2(dicAtom2I):
     datapack_test = []
     datapack_kikd = []
@@ -356,6 +350,7 @@ def load_data2(dicAtom2I):
 
         # get labels
         value = float(pvalue)
+        """
         if value <= 2 or value >= 12:
             print('value is outside of typical range')
             continue
@@ -363,7 +358,7 @@ def load_data2(dicAtom2I):
             continue
         if not os.path.exists("../pdb_files/" + pdbid + ".pdb"):  # some pdbid only exists in the index files
             continue
-
+        """
         # read data from pdbbind files
         # these lines are required since pdbbind has only 1 ligand and 1 pocket data even if there are 3 interactions
         # get key:positions in str, value:lig index dict from the .sdf
@@ -373,8 +368,7 @@ def load_data2(dicAtom2I):
         #     print("weird ligand2 pdb", pdbid)
         #     continue
         atom_pos_lig, atom_ele_lig = readmol2("../pdbbind_files/" + pdbid + "/" + pdbid + "_ligand.mol2")
-        atom_serials_poc, atom_ele_poc, atom_pos_poc = get_pocket_from_pdb("../pdbbind_files/" + pdbid + "/" +
-                                                                   pdbid + "_pocket.pdb")
+        atom_serials_poc, atom_ele_poc, atom_pos_poc = get_pocket_from_pdb("../pdbbind_files/" + pdbid + "/" + pdbid + "_pocket.pdb")
 
         n_latom = len(atom_ele_lig)
         n_patom = len(atom_ele_poc)
@@ -387,19 +381,6 @@ def load_data2(dicAtom2I):
                   str( n_latom ) + ' ==> we disregard such instances')
             continue
 
-
-        sdfMOLs = Chem.rdmolfiles.MolFromMol2File("../pdbbind_files/" + pdbid + "/" + pdbid + "_ligand.mol2",
-                                                  sanitize=False, removeHs=False)
-        if not sdfMOLs:
-            sdfMOLs = Chem.SDMolSupplier("../pdbbind_files/" + pdbid + "/" + pdbid + "_ligand.sdf")[0]
-            if not sdfMOLs:
-                print("not a valid mol-ligand1")
-                continue
-        adj_mat_lig = mol2graph(sdfMOLs, atom_ele_lig)
-        if len(adj_mat_lig) == 0:
-            print("not a valid lig-mol2")
-            continue
-
         vec_latoms = np.zeros([n_latom])
         for i, ltype in enumerate(atom_ele_lig):
             vec_latoms[i] = dicAtom2I[atom_features(ltype)]
@@ -407,56 +388,18 @@ def load_data2(dicAtom2I):
         for i, ptype in enumerate(atom_ele_poc):
             vec_patoms[i] = dicAtom2I[atom_features(ptype)]
 
-        adj_mat = np.zeros((n_latom + n_patom, n_latom + n_patom))
         thres = makeThreshold()
-        # calculate fri matrix for distances inside ligand-atoms
-        cutoffDist = 20  # angstroms
-        """
-        tmpFRIMat0 = np.zeros([n_latom, n_latom])
-        
-        for i in range(n_latom):
-            for j in range(n_latom):
-                if i == j:
-                    tmpFRIMat0[i][j] = 1
-                    continue
-                # ligtype, ligPos, poctype, pocPos
-                eucDist = euclidDist(atom_ele_lig[i], atom_pos_lig[i], atom_ele_lig[j], atom_pos_lig[j])
-                if eucDist > cutoffDist:
-                    currVal = 0
-                else:
-                    currVal = fri(atom_ele_lig[i], atom_ele_lig[j], eucDist)
-                tmpFRIMat0[i][j] = currVal
-        """
-        adj_mat[:n_latom, :n_latom] = np.copy(adj_mat_lig)
-
-        # calculate fri matrix for distances inside pocket-atoms
-        tmpFRIMat1 = np.zeros([n_patom, n_patom])
-        for i in range(n_patom):
-            for j in range(n_patom):
-                if i == j:
-                    tmpFRIMat1[i][j] = 1
-                    continue
-                #ligtype, ligPos, poctype, pocPos
-                eucDist = euclidDist(atom_ele_poc[i], atom_pos_poc[i], atom_ele_poc[j], atom_pos_poc[j])
-                if eucDist > cutoffDist:
-                    currVal = 0
-                else:
-                    currVal = cutoffBinning(eucDist, thres)#fri(atom_ele_poc[i], atom_ele_poc[j], eucDist)
-                tmpFRIMat1[i][j] = currVal
-
-        adj_mat[n_latom:n_latom + n_patom, n_latom:n_latom + n_patom] = np.copy(tmpFRIMat1)
-        # calculate fri matrix for distances between pocket and ligand
-        tmpFRIMat2 = np.zeros([n_latom, n_patom])
+        cutoffDist = 6.95  # angstroms
+        adj_mat = np.zeros((max_num_atoms, max_num_seq))
         for i in range(n_latom):
             for j in range(n_patom):
-                eucDist = euclidDist(atom_ele_lig[i], atom_pos_lig[i], atom_ele_poc[j], atom_pos_poc[j])
+                eucDist = euclidDist(atom_ele_poc[j], atom_pos_poc[j])
                 if eucDist > cutoffDist:
                     currVal = 0
                 else:
-                    currVal = cutoffBinning(eucDist, thres)#fri(atom_ele_lig[i], atom_ele_poc[j], eucDist)
-                tmpFRIMat2[i][j] = currVal
-        adj_mat[:n_latom, n_latom:] = np.copy(tmpFRIMat2)
-        adj_mat[n_latom:, :n_latom] = np.copy(np.transpose(tmpFRIMat2))
+                    currVal = cutoffBinning(eucDist, thres)
+                    #currVal = fri(atom_ele_lig[i], atom_ele_poc[j], eucDist)
+                adj_mat[i][j] = currVal)
 
         # either KIKD or IC50
         if measure in ['Ki', 'Kd']:
@@ -478,5 +421,4 @@ def weights_init(m):
             continue
         else:
             nn.init.xavier_normal_(param)
-
 
