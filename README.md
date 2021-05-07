@@ -5,14 +5,18 @@ Under review for Bioinformatics
 1 PDBbind data (re-docking)    
 - Download PDBbind data(v2019) both "general set" and "refined set" and merge all the files inside folder pdbbind_files.  
 - run "" to create re-docking dataset from PDBbind data  
+
 2 chembl_bace data (cross-docking)  
-- go to chembl and download all the IC50 values of the target protein BACE (chembl id:CHEMBL4822)
+- One can download IC50 values of the target protein BACE (chembl id:CHEMBL4822) or use the BACE_IC50.csv file to start 
+ 
+3 BACE data (cross-docking)  
+- Start with the BACE_score_compounds_D3R_GC4_answers.csv file
  
 ## data and source code path required to run BGNN library  
 - pdbbind_files ==> Preparatory work is required (too big to upload all files)  
 - pdbbind_index ==> no preparation required  
 - src2/chembl_bace ==> Preparatory work is required (too big to upload all files)  
-- src2/BACE ==> unzip the compressed file  
+- src2/BACE ==> Preparatory work is required (too big to upload all files)  
 - src2/CATS ==> unzip the compressed file  
 - src2/gc3_CATS ==> unzip the compressed file  
 
