@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from rdkit import Chem
 from pdbbind_utils_e2e import *
-from CPI_modelMM2 import *
+from model2 import *
 
 cudaDevid = 2
 device = torch.device("cuda:" + str(cudaDevid) if torch.cuda.is_available() else "cpu")
