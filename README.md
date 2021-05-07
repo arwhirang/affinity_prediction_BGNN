@@ -2,17 +2,19 @@
 Under review for Bioinformatics
 
 ## Preparation  
-1 PDBbind data  
-- Download PDBbind data(v2019) both "general set" and "refined set" and merge them.  
+1 PDBbind data (re-docking)    
+- Download PDBbind data(v2019) both "general set" and "refined set" and merge all the files inside folder pdbbind_files.  
 - run "" to create re-docking dataset from PDBbind data  
-
-## data and source code path for our library  
-- pdbbind_files  
-- pdbbind_index  
-- src  
-- src/chembl  
-- src/bace  
-- src/cats
+2 chembl_bace data (cross-docking)  
+- go to chembl and download all the IC50 values of the target protein BACE (chembl id:)
+ 
+## data and source code path required to run BGNN library  
+- pdbbind_files ==> Preparatory work is required (too big to upload all files)  
+- pdbbind_index ==> no preparation required  
+- src2/chembl_bace ==> Preparatory work is required (too big to upload all files)  
+- src2/BACE ==> unzip the compressed file  
+- src2/CATS ==> unzip the compressed file  
+- src2/gc3_CATS ==> unzip the compressed file  
 
 ## pose prediction  
 1   
@@ -28,3 +30,4 @@ Under review for Bioinformatics
 4 Bipartite graph neural network 
 5 result 
   
+I am beutifying the codes... please ask me anything if you feel confused.
