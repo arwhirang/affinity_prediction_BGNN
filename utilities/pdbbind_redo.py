@@ -7,6 +7,8 @@ import pandas as pd
 
 PATH_TO_PYTHON = "/home/sysgen/.conda/envs/cuda102/bin/python"
 
+pathToProjHome = "../"
+
 
 def gen_aligned():
     # This func iterate every pdbs, and generate re-docking dataset
@@ -16,7 +18,7 @@ def gen_aligned():
     # the pose prediction is retrieved from GNINA participants
     # https://drugdesigndata.org/php/d3r/gc4/combined/scoringboth/index.php?component=1479&method=combined
 
-    f = open('pdbbind_index/INDEX_all.2019')
+    f = open(pathToProjHome + 'pdbbind_index/INDEX_all.2019')
     for line in f.readlines():
         if line[0] == '#':
             continue
@@ -25,17 +27,17 @@ def gen_aligned():
         pdbid = lines[0]
 
         # read sdf file
-        if not os.path.exists("pdbbind_files/" + pdbid):  # some pdbid only exists in the index files
+        if not os.path.exists(pathToProjHome + "pdbbind_files/" + pdbid):  # some pdbid only exists in the index files
             continue
 
         # skip files that are already processed
-        if os.path.exists("pdbbind_files/" + pdbid + "/sep_sdfs"):
+        if os.path.exists(pathToProjHome + "pdbbind_files/" + pdbid + "/sep_sdfs"):
             continue
 
-        sdfMOLs = Chem.MolFromMolFile("pdbbind_files/" + pdbid + "/" + pdbid + "_ligand.sdf", sanitize=False)
+        sdfMOLs = Chem.MolFromMolFile(pathToProjHome + "pdbbind_files/" + pdbid + "/" + pdbid + "_ligand.sdf", sanitize=False)
         sdfMOLs.UpdatePropertyCache(strict=False)
-        if not os.path.exists("pdbbind_files/" + pdbid + "/subconfs"):
-            os.mkdir("pdbbind_files/" + pdbid + "/subconfs")
+        if not os.path.exists(pathToProjHome + "pdbbind_files/" + pdbid + "/subconfs"):
+            os.mkdir(pathToProjHome + "pdbbind_files/" + pdbid + "/subconfs")
 
         # set variables
         smi_base = Chem.MolToSmiles(sdfMOLs)
@@ -49,8 +51,8 @@ def gen_aligned():
         res = rdFMCS.FindMCS([base_mol, ref_mol], completeRingsOnly=False, bondCompare=rdFMCS.BondCompare.CompareOrder)
 
         # gen conformers
-        smi_name = "pdbbind_files/" + pdbid + "/subconfs/" + pdbid + '.smi'
-        outname = "pdbbind_files/" + pdbid + "/subconfs/" + pdbid + "_conformers.sdf"
+        smi_name = pathToProjHome + "pdbbind_files/" + pdbid + "/subconfs/" + pdbid + '.smi'
+        outname = pathToProjHome + "pdbbind_files/" + pdbid + "/subconfs/" + pdbid + "_conformers.sdf"
 
         # writing file for rdconf.py script
         with open(smi_name, 'w') as out:
@@ -60,8 +62,8 @@ def gen_aligned():
         subprocess.check_call(PATH_TO_PYTHON + ' rdconf.py --maxconf 30 ' + smi_name + ' ' + outname, shell=True)
 
         # apply obfit
-        sent = "obfit '" + res.smartsString + "' " + "pdbbind_files/" + pdbid + "/" + pdbid + "_ligand.sdf" + ' ' \
-               + outname + " > pdbbind_files/" + pdbid + "/subconfs/" + pdbid + "_aligned.sdf"
+        sent = "obfit '" + res.smartsString + "' " + pathToProjHome + "pdbbind_files/" + pdbid + "/" + pdbid + "_ligand.sdf" + ' ' \
+               + outname + " > " + pathToProjHome + "pdbbind_files/" + pdbid + "/subconfs/" + pdbid + "_aligned.sdf"
         try:
             subprocess.check_call(sent, shell=True)
         except:
@@ -70,7 +72,7 @@ def gen_aligned():
 
         # separate the *aligned.sdf into discrete sdf (usually less than maxconf)
         # store each sdfs and save them to dict
-        fi = open("pdbbind_files/" + pdbid + "/subconfs/" + pdbid + "_aligned.sdf")
+        fi = open(pathToProjHome + "pdbbind_files/" + pdbid + "/subconfs/" + pdbid + "_aligned.sdf")
         lines = fi.readlines()
         dicFile = {}
         tmplines = []
@@ -84,7 +86,7 @@ def gen_aligned():
             tmplines.append(aline)
         fi.close()
         # make directory for storing separated sdf
-        new_sub_path = "pdbbind_files/" + pdbid + "/sep_sdfs"
+        new_sub_path = pathToProjHome + "pdbbind_files/" + pdbid + "/sep_sdfs"
         if not os.path.exists(new_sub_path):
             os.mkdir(new_sub_path)
         # write sdf to the pre-defined path
