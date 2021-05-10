@@ -10,15 +10,21 @@ conda environment should have rdkit/obfit(open babel)
 - The pdbbind_redo.py file contains python path for the conda environment. Please modify the PATH_TO_PYTHON accordingly.  
 
 2 chembl_bace data (cross-docking, "bace_chembl_cd")  
-- One can download IC50 values of the target protein BACE (chembl id:CHEMBL4822) or use the BACE_IC50.csv file to start  
+- One can download IC50 values of the target protein BACE (chembl id:CHEMBL4822) or use the "BACE_IC50.csv" file to start  
 - run "make_data_smilecomp.py", "smile_comp2.py", "conformer_gen_BACE.py", and "alignedSubdir.py" in this order.  
 - Some of the files contains python path for the conda environment. Please modify the PATH_TO_PYTHON accordingly.  
+- copy all the contents inside the "truth" folder into "alignedsubset"  
+- copy "BACE_IC50.csv" into "alignedsubset"  
+- copy "similar_pdbid_info_bace.tsv" into "alignedsubset"  
 - move the "alignedsubset" directory to the "src2" and change the name to "chembl_bace"  
   
 3 BACE data (cross-docking, "bace_gc4_cd")  
-- Start with the BACE_score_compounds_D3R_GC4_answers.csv file  
+- Start with the "BACE_score_compounds_D3R_GC4_answers.csv" file  
 - run "make_data_smilecomp.py", "smile_comp_bace.py", "conformer_generation_bace.py", and "alignedSubdir_bace.py" in this order.  
 - Some of the files contains python path for the conda environment. Please modify the PATH_TO_PYTHON accordingly.  
+- copy all the contents inside the "truth" folder into "alignedBACEsubset"  
+- copy "BACE_score_compounds_D3R_GC4_answers.csv" into "alignedBACEsubset"  
+- copy "similar_pdbid_info2.tsv" into "alignedBACEsubset"  
 - move the "alignedBACEsubset" directory to the "src2" and change the name to "BACE"  
  
 ## data and source code path required to run BGNN library  
@@ -32,5 +38,8 @@ conda environment should have rdkit/obfit(open babel)
   
 ## affinity prediction  
 - run the "src2/train.py"  
+  
+## ensemble  
+- I used ensemble for the final result. the code can be found in the utilities folder  
   
 I am beutifying the codes... please ask me anything if you feel confused.
