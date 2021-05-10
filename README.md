@@ -4,7 +4,8 @@ Under review for Bioinformatics
 ## Preparation  
 1 PDBbind data (re-docking)    
 - Download PDBbind data(v2019) both "general set" and "refined set" and merge all the files inside folder pdbbind_files.  
-- run "" to create re-docking dataset from PDBbind data  
+- run "utilities/pdbbind_redo.py" to create re-docking dataset from PDBbind data  
+- The pdbbind_redo.py file contains python path for the conda environment. Please modify the PATH_TO_PYTHON accordingly.
 
 2 chembl_bace data (cross-docking)  
 - One can download IC50 values of the target protein BACE (chembl id:CHEMBL4822) or use the BACE_IC50.csv file to start 
