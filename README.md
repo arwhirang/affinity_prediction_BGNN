@@ -38,8 +38,10 @@ conda environment should have rdkit/obfit(open babel)
   
 ## affinity prediction  
 - run the "src2/train.py"  
-  
+- In the first run, modify the hyperparameter usePickledData to False.  
+    
 ## ensemble  
 - I used ensemble for the final result. the code can be found in the utilities folder  
   
-I am beutifying the codes... please ask me anything if you feel confused.
+  
+please ask me anything if you feel confused.
