@@ -3,12 +3,13 @@ Under review for Bioinformatics
 
 ## Preparation(pose prediction, too)  
 conda environment should have rdkit/obfit(open babel)/sklearn/pandas/scipy/pytorch  
-  
-1 PDBbind data (re-docking)    
+    
+1 PDBbind data (re-docking)  
 - Download PDBbind data(v2019) both "general set" and "refined set" and merge all the files inside folder pdbbind_files.  
 - run "utilities/pdbbind_redo.py" to create re-docking dataset from PDBbind data  
 - The pdbbind_redo.py file contains python path for the conda environment. Please modify the PATH_TO_PYTHON accordingly.  
-
+- Assuming that it takes up to an hour to process 100 instances, the job will finish in less than 40 hours.  
+  
 2 chembl_bace data (cross-docking, "bace_chembl_cd")  
 - One can download IC50 values of the target protein BACE (chembl id:CHEMBL4822) or use the "BACE_IC50.csv" file to start  
 - run "make_data_smilecomp.py", "smile_comp2.py", "conformer_gen_BACE.py", and "alignedSubdir.py" in this order.  
@@ -36,7 +37,7 @@ conda environment should have rdkit/obfit(open babel)/sklearn/pandas/scipy/pytor
 - src2/gc3_CATS ==> unzip the compressed file  
 - The name "src2" means that the code is run on the 2nd gpu card
   
-## affinity prediction  
+## affinity prediction(BGNN)  
 - run the "src2/train.py"  
 - In the first run, modify the hyperparameter usePickledData to False.  
     
