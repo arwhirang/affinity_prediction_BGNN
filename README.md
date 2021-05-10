@@ -2,7 +2,7 @@
 Under review for Bioinformatics
 
 ## Preparation(pose prediction, too)  
-conda environment should have rdkit/obfit(open babel)  
+conda environment should have rdkit/obfit(open babel)/sklearn/pandas/scipy/pytorch  
   
 1 PDBbind data (re-docking)    
 - Download PDBbind data(v2019) both "general set" and "refined set" and merge all the files inside folder pdbbind_files.  
