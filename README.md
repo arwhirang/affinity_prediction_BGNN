@@ -1,5 +1,5 @@
 # Blind affinity prediction using BGNN and transfer learning on re-docking dataset  
-Under review for Bioinformatics
+Under review for MDPI IJMS  
 
 ## Preparation(pose prediction, too)  
 conda environment should have rdkit/obfit(open babel)/sklearn/pandas/scipy/pytorch  
