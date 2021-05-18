@@ -35,7 +35,7 @@ conda environment should have rdkit/obfit(open babel)/sklearn/pandas/scipy/pytor
 - src2/BACE ==> Preparatory work is required (too big to upload all files)  
 - src2/CATS ==> unzip the compressed file  
 - src2/gc3_CATS ==> unzip the compressed file  
-- The name "src2" means that the code is run on the 2nd gpu card
+- The name "src2" means that the code is run on the third (0,1,2) gpu card
   
 ## affinity prediction(BGNN)  
 - run the "src2/train.py"  
