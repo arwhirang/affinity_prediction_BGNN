@@ -164,8 +164,8 @@ def test(net, test_data):  # sub process for rough evaluatoin and test
         _values = values.cpu().detach().numpy().reshape(-1).tolist()
         for i, nconf in enumerate(n_confs_perbatch):
             nconf_int = int(nconf)
-            aff_pred_perbatch[i] = sum(aff_pred[previdx: previdx + nconf_int + 1]) / nconf
-            values_perbatch[i] = sum(_values[previdx: previdx + nconf_int + 1]) / nconf
+            aff_pred_perbatch[i] = sum(aff_pred[previdx: previdx + nconf_int]) / nconf
+            values_perbatch[i] = sum(_values[previdx: previdx + nconf_int]) / nconf
             previdx = previdx + nconf_int
 
         output_list += list(aff_pred_perbatch)
@@ -198,8 +198,8 @@ def pred_thy(net, test_data):  # sub process for test (no evaluation)
 
         for i, nconf in enumerate(n_confs_perbatch):
             nconf_int = int(nconf)
-            aff_pred_perbatch[i] = sum(aff_pred[previdx: previdx + nconf_int + 1]) / nconf
-            values_perbatch[i] = sum(_values[previdx: previdx + nconf_int + 1]) / nconf
+            aff_pred_perbatch[i] = sum(aff_pred[previdx: previdx + nconf_int]) / nconf
+            values_perbatch[i] = sum(_values[previdx: previdx + nconf_int]) / nconf
             previdx = previdx + nconf_int
         output_list += list(aff_pred_perbatch)
         value_list += list(values_perbatch)
