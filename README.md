@@ -1,16 +1,18 @@
 # Blind affinity prediction using BGNN and transfer learning on re-docking dataset  
-Under review for MDPI IJMS  
+Under review for Journal of Computer-Aided Molecular Design  
 
 ## Preparation(pose prediction, too)  
 conda environment should have rdkit/obfit(open babel)/sklearn/pandas/scipy/pytorch  
     
 1 PDBbind data (re-docking)  
+- http://www.pdbbind.org.cn/  
 - Download PDBbind data(v2019) both "general set" and "refined set" and merge all the files inside folder pdbbind_files.  
 - run "utilities/pdbbind_redo.py" to create re-docking dataset from PDBbind data  
 - The pdbbind_redo.py file contains python path for the conda environment. Please modify the PATH_TO_PYTHON accordingly.  
 - Assuming that it takes up to an hour to process 100 instances, the job will finish in less than 40 hours.  
   
 2 chembl_bace data (cross-docking, "bace_chembl_cd")  
+- https://www.ebi.ac.uk/chembl/target_report_card/CHEMBL4822/  
 - One can download IC50 values of the target protein BACE (chembl id:CHEMBL4822) or use the "BACE_IC50.csv" file to start  
 - run "make_data_smilecomp.py", "smile_comp2.py", "conformer_gen_BACE.py", and "alignedSubdir.py" in this order.  
 - Some of the files contains python path for the conda environment. Please modify the PATH_TO_PYTHON accordingly.  
@@ -20,6 +22,7 @@ conda environment should have rdkit/obfit(open babel)/sklearn/pandas/scipy/pytor
 - move the "alignedsubset" directory to the "src2" and change the name to "chembl_bace"  
   
 3 BACE data (cross-docking, "bace_gc4_cd")  
+- https://drugdesigndata.org/about/grand-challenge-4  
 - Start with the "BACE_score_compounds_D3R_GC4_answers.csv" file  
 - run "make_data_smilecomp.py", "smile_comp_bace.py", "conformer_generation_bace.py", and "alignedSubdir_bace.py" in this order.  
 - Some of the files contains python path for the conda environment. Please modify the PATH_TO_PYTHON accordingly.  
