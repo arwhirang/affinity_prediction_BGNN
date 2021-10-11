@@ -271,6 +271,73 @@ def collate_fn(batch):  # collate means collect and combine
 
 # -----------codes for torch-specific dataloader end -----------
 
+def loadgc4BACEset(dic_atom2i):
+    tmpdatapack = []
+
+    # load scoreset label
+    gc4_label_whole = pd.read_csv("BACE/BACE_score_compounds_D3R_GC4_answers.csv")  # for values
+    gc4_label = list(gc4_label_whole[:]["Affinity"])
+    gc4_id = list(gc4_label_whole[:]["Cmpd_ID"])
+    for i, val in enumerate(gc4_label):
+        # normalization
+        pvalue = uM_to_kcal(val) + 9  # pdbbind mean, std
+        gc4_label[i] = pvalue
+
+    # load matching ligand and reference data #
+    ref_data = pd.read_csv('BACE/similar_pdbid_info2.tsv', header=None,
+                           names=['d3r_id', 'd3r_smile', 'pdb_id', 'pdb_lig', 'pdb_smile', 'smarts'], sep='\t')
+
+    for _, row in ref_data.iterrows():
+        _id = row["d3r_id"]
+        ref_pdbid = row["pdb_id"]
+        refpro = 'BACE/' + str(ref_pdbid) + "_protein.pdb"
+
+        idnum = str(_id[5:])
+
+        # load data from predicted conformers
+        ligdir = "BACE/"
+        Atom_Keys = pd.read_csv("BACE/PDB_Atom_Keys.csv", sep=",")
+        subproc(refpro, ligdir, idnum, tmpdatapack, Atom_Keys, dic_atom2i, gc4_id, gc4_label, _id)
+
+    return tmpdatapack
+
+
+def loadchemblBACEset(dic_atom2i):
+    if os.path.exists("chembl_bace.pkl"):
+        tmpdatapack = pickle.load(open('chembl_bace.pkl', 'rb'))
+        tmpdatapack1, tmpdatapack2 = tmpdatapack[:300], tmpdatapack[300:]  # 1/10 of the data
+        return tmpdatapack1, tmpdatapack2
+
+    tmpdatapack = []
+    # load scoreset label
+    label_whole = pd.read_csv("chembl_bace/BACE_IC50.csv")  # for values
+    _label = list(label_whole[:]["Standard Value"])
+    _id = list(label_whole[:]["Molecule ChEMBL ID"])
+    for i, val in enumerate(_label):
+        # normalization
+        pvalue = nM_to_kcal(val) + 9 # pdbbind mean, std
+        _label[i] = pvalue
+
+    # load matching ligand and reference data #
+    ref_data = pd.read_csv('chembl_bace/similar_pdbid_info_bace.tsv', header=None,
+                           names=['d3r_id', 'd3r_smile', 'pdb_id', 'pdb_lig', 'pdb_smile', 'smarts'], sep='\t')
+
+    for _, row in ref_data.iterrows():
+        d3r_id = row["d3r_id"]
+        ref_pdbid = row["pdb_id"]
+        refpro = 'chembl_bace/' + str(ref_pdbid) + "_protein.pdb"
+
+        # load data from predicted conformers
+        ligdir = "chembl_bace/"
+        Atom_Keys = pd.read_csv("PDB_Atom_Keys.csv", sep=",")
+        id_idx = d3r_id.split("_")[0]
+        cur_dir = str(d3r_id.split("_")[1])
+        subproc(refpro, ligdir, cur_dir, tmpdatapack, Atom_Keys, dic_atom2i, _id, _label, id_idx)
+
+    pickle.dump(tmpdatapack, open('chembl_bace.pkl', 'wb'))
+    tmpdatapack1, tmpdatapack2 = tmpdatapack[:300], tmpdatapack[300:]  # 1/10 of the data
+    return tmpdatapack1, tmpdatapack2
+
 
 if __name__ == "__main__":
     n_epoch = 100
