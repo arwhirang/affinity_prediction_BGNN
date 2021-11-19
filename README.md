@@ -1,4 +1,4 @@
-# Blind affinity prediction using BGNN and transfer learning on re-docking dataset  
+# affinity prediction using BGNN and transfer learning on re-docking dataset  
 Under review for Journal of Computer-Aided Molecular Design  
 
 ## Preparation(pose prediction, too)  
