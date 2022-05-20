@@ -351,7 +351,7 @@ if __name__ == "__main__":
         dic_atom2i = pickle.load(open('prevData_IC50_dicts.pkl', 'rb'))
     else:
         dic_atom2i = {}
-        datapack_kikd, datapack_ic50, datapack_test = load_data2(dic_atom2i)
+        datapack_kikd, datapack_ic50, datapack_test = load_data(dic_atom2i)
         pickle.dump((datapack_kikd, datapack_ic50, datapack_test), open('prevData_IC50.pkl', 'wb'))  # , protocol=0)
         pickle.dump(dict(dic_atom2i), open('prevData_IC50_dicts.pkl', 'wb'))
 
