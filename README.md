@@ -1,5 +1,7 @@
 # affinity prediction using BGNN and transfer learning on re-docking dataset  
-Under review for Journal of Computer-Aided Molecular Design  
+Accepted on Journal of Computer-Aided Molecular Design.
+https://link.springer.com/article/10.1007/s10822-022-00448-3  
+
 
 ## Preparation(pose prediction, too)  
 conda environment should have rdkit/obfit(open babel)/sklearn/pandas/scipy/pytorch  
